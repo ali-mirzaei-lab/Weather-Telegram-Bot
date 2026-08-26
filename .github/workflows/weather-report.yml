@@ -1,0 +1,26 @@
+name: Daily Weather Report - Qaem Shahr
+
+on:
+  schedule:
+    # 10:00 AM Asia/Tehran (UTC+3:30) = 06:30 UTC
+    - cron: '30 6 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  weather-report:
+    name: Fetch & Send Weather Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/weather-report.sh
+
+      - name: Run weather report
+        run: bash scripts/weather-report.sh
