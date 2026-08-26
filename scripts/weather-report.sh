@@ -70,7 +70,7 @@ log "=== Weather report completed ==="
 # ──────────────────────────────────────────────────────
 send_telegram() {
   local token="${TELEGRAM_TOKEN:-}"
-  local chat_id="${TELEGRAM_CHAT_ID:-}"
+  local chat_ids="${TELEGRAM_CHAT_IDS:-}"
 
   if [ -z "$token" ]; then
     log "ERROR: TELEGRAM_TOKEN is not set."
@@ -78,11 +78,11 @@ send_telegram() {
     return 1
   fi
 
-  if [ -z "$chat_id" ]; then
-    log "ERROR: TELEGRAM_CHAT_ID is not set."
-    echo "ERROR: TELEGRAM_CHAT_ID environment variable is not set."
-    return 1
-  fi
+if [ -z "$chat_ids" ]; then
+  log "ERROR: TELEGRAM_CHAT_IDS is not set."
+  echo "ERROR: TELEGRAM_CHAT_IDS environment variable is not set."
+  return 1
+fi
 
   if [ ! -f "$MSG_FILE" ] || [ ! -s "$MSG_FILE" ]; then
     log "ERROR: No message file."
@@ -91,6 +91,20 @@ send_telegram() {
   fi
 
   log "Sending to Telegram..."
+
+  local success_count=0
+local failure_count=0
+
+IFS=',' read -ra recipients <<< "$chat_ids"
+
+for chat_id in "${recipients[@]}"; do
+  chat_id="$(echo "$chat_id" | xargs)"
+
+  if [ -z "$chat_id" ]; then
+    continue
+  fi
+
+  log "Sending to Telegram chat ID: $chat_id"
 
   local json_payload
   json_payload=$(python3 -c "
@@ -105,21 +119,23 @@ print(json.dumps(payload, ensure_ascii=False))
   response=$(curl -s -X POST "https://api.telegram.org/bot${token}/sendMessage" \
     -H "Content-Type: application/json" \
     -d "$json_payload")
+
   local curl_exit=$?
 
   if [ $curl_exit -ne 0 ]; then
-    log "ERROR: curl failed (exit $curl_exit)"
-    echo "ERROR: Failed to reach Telegram API."
-    return 1
+    log "ERROR: curl failed for chat $chat_id"
+    failure_count=$((failure_count + 1))
+    continue
   fi
 
   local ok
-  ok=$(echo "$response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('ok',''))" 2>/dev/null || echo "")
+  ok=$(echo "$response" | python3 -c \
+    "import sys,json; print(json.load(sys.stdin).get('ok',''))" \
+    2>/dev/null || echo "")
 
   if [ "$ok" = "True" ]; then
-    log "Sent to Telegram successfully."
-    echo "Weather report sent to Telegram successfully."
-    return 0
+    log "Sent successfully to chat $chat_id"
+    success_count=$((success_count + 1))
   else
     local err_desc
     err_desc=$(echo "$response" | python3 -c "
@@ -127,12 +143,24 @@ import sys, json
 try:
     r = json.load(sys.stdin)
     print(r.get('description', 'Unknown error'))
-except: print('Could not parse Telegram response')
+except:
+    print('Could not parse Telegram response')
 " 2>/dev/null || echo "Could not parse response")
-    log "ERROR: Telegram API error: $err_desc"
-    echo "ERROR: Telegram API error: $err_desc"
-    return 1
+
+    log "ERROR: Telegram API error for $chat_id: $err_desc"
+    failure_count=$((failure_count + 1))
   fi
+done
+
+log "Telegram results: $success_count successful, $failure_count failed"
+
+if [ "$success_count" -gt 0 ]; then
+  echo "Weather report sent to $success_count Telegram recipient(s)."
+  return 0
+else
+  echo "ERROR: Failed to send weather report to any Telegram recipient."
+  return 1
+fi
 }
 
 send_telegram
