@@ -2,8 +2,9 @@ name: Daily Weather Report - Qaem Shahr
 
 on:
   schedule:
-    # 10:00 AM Asia/Tehran (UTC+3:30) = 06:30 UTC
-    - cron: '30 6 * * *'
+    - cron: '46 14 * * *'
+      timezone: 'Asia/Tehran'
+
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
