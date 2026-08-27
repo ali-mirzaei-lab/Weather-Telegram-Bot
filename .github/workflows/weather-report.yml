@@ -3,7 +3,7 @@ name: Daily Weather Report - Qaem Shahr Test
 on:
   push:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '10 13 * * *'
   workflow_dispatch:
 
 permissions:
