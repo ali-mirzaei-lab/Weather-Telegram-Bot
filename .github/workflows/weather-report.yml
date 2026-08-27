@@ -1,4 +1,4 @@
-name: Daily Weather Report - Qaem Shahr
+name: Daily Weather Report - Qaem Shahr Test
 
 on:
   schedule:
