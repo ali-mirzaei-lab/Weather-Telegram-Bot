@@ -2,16 +2,17 @@ name: Daily Weather Report - Qaem Shahr
 
 on:
   schedule:
-    - cron: '46 14 * * *'
+    - cron: '17 7 * * *'
       timezone: 'Asia/Tehran'
 
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   weather-report:
     name: Fetch & Send Weather Report
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     env:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
