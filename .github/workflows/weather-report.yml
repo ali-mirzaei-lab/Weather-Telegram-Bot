@@ -2,8 +2,7 @@ name: Daily Weather Report - Qaem Shahr
 
 on:
   schedule:
-    - cron: '17 7 * * *'
-      timezone: 'Asia/Tehran'
+    - cron: '*/5 * * * *'
 
   workflow_dispatch:
 
