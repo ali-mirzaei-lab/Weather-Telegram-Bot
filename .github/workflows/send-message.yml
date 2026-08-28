@@ -1,0 +1,106 @@
+name: Send Telegram Message
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: "Message to send to all Telegram users"
+        required: true
+        type: string
+
+jobs:
+  send-message:
+    name: Send Message to Telegram Users
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+      MESSAGE: ${{ inputs.message }}
+
+    steps:
+      - name: Send message to all users
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TELEGRAM_TOKEN:-}" ]; then
+            echo "ERROR: TELEGRAM_TOKEN is not set."
+            exit 1
+          fi
+
+          if [ -z "${TELEGRAM_CHAT_IDS:-}" ]; then
+            echo "ERROR: TELEGRAM_CHAT_IDS is not set."
+            exit 1
+          fi
+
+          if [ -z "${MESSAGE:-}" ]; then
+            echo "ERROR: Message is empty."
+            exit 1
+          fi
+
+          echo "Sending message to Telegram users..."
+
+          FAILED=0
+
+          IFS=',' read -ra CHAT_IDS <<< "$TELEGRAM_CHAT_IDS"
+
+          for CHAT_ID in "${CHAT_IDS[@]}"; do
+            CHAT_ID="$(echo "$CHAT_ID" | xargs)"
+
+            echo "Sending to chat ID: $CHAT_ID"
+
+            RESPONSE=$(python3 -c '
+          import json
+          import os
+
+          print(json.dumps({
+              "chat_id": os.environ["CHAT_ID"],
+              "text": os.environ["MESSAGE"]
+          }, ensure_ascii=False))
+          ' CHAT_ID="$CHAT_ID" MESSAGE="$MESSAGE")
+
+            RESPONSE=$(curl -s \
+              -X POST \
+              "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+              -H "Content-Type: application/json" \
+              -d "$RESPONSE")
+
+            OK=$(echo "$RESPONSE" | python3 -c '
+          import json
+          import sys
+
+          try:
+              data = json.load(sys.stdin)
+              print(data.get("ok", False))
+          except Exception:
+              print(False)
+          ')
+
+            if [ "$OK" = "True" ]; then
+              echo "Successfully sent to $CHAT_ID"
+            else
+              echo "ERROR: Failed to send to $CHAT_ID"
+
+              echo "$RESPONSE" | python3 -c '
+          import json
+          import sys
+
+          try:
+              data = json.load(sys.stdin)
+              print("Telegram:", data.get("description", "Unknown error"))
+          except Exception:
+              print("Could not parse Telegram response.")
+          '
+
+              FAILED=1
+            fi
+          done
+
+          if [ "$FAILED" -ne 0 ]; then
+            echo "One or more messages failed."
+            exit 1
+          fi
+
+          echo "Message successfully sent to all users."
