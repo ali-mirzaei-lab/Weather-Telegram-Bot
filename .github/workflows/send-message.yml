@@ -51,21 +51,11 @@ jobs:
 
             echo "Sending to chat ID: $CHAT_ID"
 
-            RESPONSE=$(python3 -c '
-          import json
-          import os
-
-          print(json.dumps({
-              "chat_id": os.environ["CHAT_ID"],
-              "text": os.environ["MESSAGE"]
-          }, ensure_ascii=False))
-          ' CHAT_ID="$CHAT_ID" MESSAGE="$MESSAGE")
-
             RESPONSE=$(curl -s \
               -X POST \
               "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-              -H "Content-Type: application/json" \
-              -d "$RESPONSE")
+              --data-urlencode "chat_id=${CHAT_ID}" \
+              --data-urlencode "text=${MESSAGE}")
 
             OK=$(echo "$RESPONSE" | python3 -c '
           import json
