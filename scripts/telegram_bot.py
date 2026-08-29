@@ -158,26 +158,8 @@ def main():
             updates = get_updates(offset)
             for update in updates:
                 offset = update["update_id"] + 1
+                # Consume updates silently — no replies ever
                 
-                if "message" in update:
-                    msg = update["message"]
-                    chat_id = msg["chat"]["id"]
-                    
-                    # Optional: restrict to your chat IDs
-                    allowed = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
-                    if allowed and str(chat_id) not in allowed:
-                        continue
-                    
-                    # Send ONE message to remove the keyboard, then stay silent
-                    remove_keyboard = {
-                        "remove_keyboard": True
-                    }
-                    send_message(
-                        chat_id,
-                        "✅",
-                        reply_markup=remove_keyboard
-                    )
-                    
         except Exception as e:
             print(f"Error: {e}")
             time.sleep(5)
