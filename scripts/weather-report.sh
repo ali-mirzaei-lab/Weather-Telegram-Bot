@@ -164,4 +164,14 @@ fi
 }
 
 send_telegram
+
+# ── Send weekly forecast ──────────────────────────────
+echo "Sending weekly forecast..."
+python3 "$BASE_DIR/weekly_report.py"
+WEEKLY_EXIT=$?
+
+if [ $WEEKLY_EXIT -ne 0 ]; then
+    log "ERROR: Weekly forecast failed (exit $WEEKLY_EXIT)"
+fi
+
 exit 0
