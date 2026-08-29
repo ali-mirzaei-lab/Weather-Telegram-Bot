@@ -159,20 +159,6 @@ def main():
             for update in updates:
                 offset = update["update_id"] + 1
                 
-                # Handle button press (callback query)
-                if "callback_query" in update:
-                    query = update["callback_query"]
-                    chat_id = query["message"]["chat"]["id"]
-                    query_id = query["id"]
-                    
-                    if query["data"] == "weekly_forecast":
-                        answer_callback(query_id, "⏳ در حال دریافت...")
-                        data = fetch_weather()
-                        text = build_weekly_text(data)
-                        send_message(chat_id, text)
-                    continue
-                
-                # Handle regular messages
                 if "message" in update:
                     msg = update["message"]
                     chat_id = msg["chat"]["id"]
@@ -183,20 +169,15 @@ def main():
                         send_message(chat_id, "⛔ شما مجاز نیستید.")
                         continue
                     
-                    # Send welcome message with button
-                    keyboard = {
-                        "inline_keyboard": [[
-                            {"text": "📅 پیش‌بینی هفته", "callback_data": "weekly_forecast"}
-                        ]]
-                    }
+                    # Simple welcome message
                     send_message(
                         chat_id,
-                        "👋 سلام! برای دریافت پیش‌بینی هفته دکمه زیر را بزنید:",
-                        reply_markup=keyboard
+                        "👋 سلام! گزارش آب‌وهوا هر روز صبح ارسال می‌شود."
                     )
                     
         except Exception as e:
             print(f"Error: {e}")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
