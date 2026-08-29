@@ -150,7 +150,7 @@ def get_updates(offset=None):
     return resp.json().get("result", [])
 
 def main():
-    print("🤖 Bot is running...")
+    print("🤖 Bot is running (silent mode)...")
     offset = None
     
     while True:
@@ -159,22 +159,9 @@ def main():
             for update in updates:
                 offset = update["update_id"] + 1
                 
-                if "message" in update:
-                    msg = update["message"]
-                    chat_id = msg["chat"]["id"]
-                    
-                    # Optional: restrict to your chat IDs
-                    allowed = [c.strip() for c in CHAT_IDS.split(",") if c.strip()]
-                    if allowed and str(chat_id) not in allowed:
-                        send_message(chat_id, "⛔ شما مجاز نیستید.")
-                        continue
-                    
-                    # Simple welcome message
-                    send_message(
-                        chat_id,
-                        "👋 سلام! گزارش آب‌وهوا هر روز صبح ارسال می‌شود."
-                    )
-                    
+                # Just consume updates to keep polling clean
+                # No response sent to any message
+                
         except Exception as e:
             print(f"Error: {e}")
             time.sleep(5)
